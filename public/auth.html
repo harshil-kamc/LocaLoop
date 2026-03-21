@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CivicConnect - Login & Register</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .auth-container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            width: 100%;
+            max-width: 450px;
+            overflow: hidden;
+        }
+
+        .auth-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .auth-header h1 {
+            font-size: 28px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .auth-header p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .auth-body {
+            padding: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #333;
+            font-size: 14px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .role-selector {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .role-option {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 500;
+            color: #666;
+        }
+
+        .role-option:hover {
+            border-color: #667eea;
+            background: #f0f0f0;
+        }
+
+        .role-option.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .btn-primary {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+
+        .btn-guest {
+            width: 100%;
+            padding: 12px;
+            background: #f0f0f0;
+            color: #667eea;
+            border: 2px solid #667eea;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-top: 10px;
+        }
+
+        .btn-guest:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        .form-switch {
+            text-align: center;
+            margin-top: 15px;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .form-switch a {
+            color: #667eea;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: underline;
+        }
+
+        .form-switch a:hover {
+            color: #764ba2;
+        }
+
+        .error-message {
+            background: #fee;
+            color: #c33;
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            display: none;
+            font-size: 14px;
+        }
+
+        .success-message {
+            background: #efe;
+            color: #3c3;
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            display: none;
+            font-size: 14px;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            color: #667eea;
+            font-weight: 600;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="auth-container">
+        <!-- Header -->
+        <div class="auth-header">
+            <h1><i class="fas fa-map-marker-alt"></i> CivicConnect</h1>
+            <p>Report issues, engage community, verify solutions</p>
+        </div>
+
+        <!-- Auth Body -->
+        <div class="auth-body">
+            <!-- ERROR MESSAGE -->
+            <div class="error-message" id="errorMsg"></div>
+            <div class="success-message" id="successMsg"></div>
+
+            <!-- LOGIN FORM -->
+            <div id="loginForm">
+                <h2 style="margin-bottom: 20px; color: #333;">Login</h2>
+                
+                <div class="form-group">
+                    <label for="loginEmail">Email</label>
+                    <input type="email" id="loginEmail" placeholder="you@example.com" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="loginPassword">Password</label>
+                    <input type="password" id="loginPassword" placeholder="••••••••" required>
+                </div>
+
+                <button class="btn-primary" onclick="performLogin()">
+                    <span id="loginBtnText">Login</span>
+                    <span class="loading" id="loginLoading"><i class="fas fa-spinner fa-spin"></i> Logging in...</span>
+                </button>
+
+                <button class="btn-guest" onclick="enterGuestMode()">
+                    <i class="fas fa-globe"></i> Continue as Guest
+                </button>
+
+                <div class="form-switch">
+                    New here? <a onclick="switchToRegister()">Create an account</a>
+                </div>
+            </div>
+
+            <!-- REGISTER FORM -->
+            <div id="registerForm" class="hidden">
+                <h2 style="margin-bottom: 20px; color: #333;">Create Account</h2>
+                
+                <div class="form-group">
+                    <label for="registerName">Full Name</label>
+                    <input type="text" id="registerName" placeholder="John Doe" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="registerEmail">Email</label>
+                    <input type="email" id="registerEmail" placeholder="you@example.com" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="registerPassword">Password</label>
+                    <input type="password" id="registerPassword" placeholder="••••••••" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="registerPasswordConfirm">Confirm Password</label>
+                    <input type="password" id="registerPasswordConfirm" placeholder="••••••••" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Account Type</label>
+                    <div class="role-selector">
+                        <div class="role-option active" onclick="selectRole('Citizen')">
+                            <i class="fas fa-user"></i> Citizen
+                        </div>
+                        <div class="role-option" onclick="selectRole('Governance')">
+                            <i class="fas fa-building"></i> Governance
+                        </div>
+                    </div>
+                </div>
+
+                <input type="hidden" id="selectedRole" value="Citizen">
+
+                <button class="btn-primary" onclick="performRegister()">
+                    <span id="registerBtnText">Create Account</span>
+                    <span class="loading" id="registerLoading"><i class="fas fa-spinner fa-spin"></i> Creating...</span>
+                </button>
+
+                <div class="form-switch">
+                    Already have an account? <a onclick="switchToLogin()">Login here</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ========== ROLE SELECTOR ==========
+        function selectRole(role) {
+            document.getElementById('selectedRole').value = role;
+            document.querySelectorAll('.role-option').forEach(option => option.classList.remove('active'));
+            event.target.closest('.role-option').classList.add('active');
+        }
+
+        // ========== FORM SWITCHING ==========
+        function switchToRegister() {
+            document.getElementById('loginForm').classList.add('hidden');
+            document.getElementById('registerForm').classList.remove('hidden');
+            clearMessages();
+        }
+
+        function switchToLogin() {
+            document.getElementById('registerForm').classList.add('hidden');
+            document.getElementById('loginForm').classList.remove('hidden');
+            clearMessages();
+        }
+
+        // ========== MESSAGE HANDLERS ==========
+        function showError(message) {
+            const errorDiv = document.getElementById('errorMsg');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+            setTimeout(() => { errorDiv.style.display = 'none'; }, 5000);
+        }
+
+        function showSuccess(message) {
+            const successDiv = document.getElementById('successMsg');
+            successDiv.textContent = message;
+            successDiv.style.display = 'block';
+            setTimeout(() => { successDiv.style.display = 'none'; }, 3000);
+        }
+
+        function clearMessages() {
+            document.getElementById('errorMsg').style.display = 'none';
+            document.getElementById('successMsg').style.display = 'none';
+        }
+
+        // ========== LOGIN ==========
+        async function performLogin() {
+            const email = document.getElementById('loginEmail').value.trim();
+            const password = document.getElementById('loginPassword').value;
+
+            if (!email || !password) {
+                showError('Please fill in all fields');
+                return;
+            }
+
+            document.getElementById('loginBtnText').style.display = 'none';
+            document.getElementById('loginLoading').style.display = 'inline';
+
+            try {
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    localStorage.setItem('civicToken', data.token);
+                    localStorage.setItem('civicUser', JSON.stringify(data.user));
+                    window.location.href = '/dashboard.html';
+                } else {
+                    showError(data.message || 'Login failed');
+                }
+            } catch (error) {
+                showError('Network error. Please try again.');
+            } finally {
+                document.getElementById('loginBtnText').style.display = 'inline';
+                document.getElementById('loginLoading').style.display = 'none';
+            }
+        }
+
+        // ========== REGISTER ==========
+        async function performRegister() {
+            const name = document.getElementById('registerName').value.trim();
+            const email = document.getElementById('registerEmail').value.trim();
+            const password = document.getElementById('registerPassword').value;
+            const passwordConfirm = document.getElementById('registerPasswordConfirm').value;
+            const role = document.getElementById('selectedRole').value;
+
+            if (!name || !email || !password || !passwordConfirm) {
+                showError('Please fill in all fields');
+                return;
+            }
+
+            if (password !== passwordConfirm) {
+                showError('Passwords do not match');
+                return;
+            }
+
+            if (password.length < 6) {
+                showError('Password must be at least 6 characters');
+                return;
+            }
+
+            document.getElementById('registerBtnText').style.display = 'none';
+            document.getElementById('registerLoading').style.display = 'inline';
+
+            try {
+                const response = await fetch('/api/auth/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, email, password, role })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    localStorage.setItem('civicToken', data.token);
+                    localStorage.setItem('civicUser', JSON.stringify(data.user));
+                    window.location.href = '/dashboard.html';
+                } else {
+                    showError(data.message || 'Registration failed');
+                }
+            } catch (error) {
+                showError('Network error. Please try again.');
+            } finally {
+                document.getElementById('registerBtnText').style.display = 'inline';
+                document.getElementById('registerLoading').style.display = 'none';
+            }
+        }
+
+        // ========== GUEST MODE ==========
+        function enterGuestMode() {
+            localStorage.removeItem('civicToken');
+            localStorage.setItem('civicUser', JSON.stringify({ 
+                role: 'Guest',
+                name: 'Guest User'
+            }));
+            window.location.href = '/dashboard.html';
+        }
+
+        // ========== AUTO-LOGIN CHECK ==========
+        window.addEventListener('load', () => {
+            const token = localStorage.getItem('civicToken');
+            if (token) {
+                window.location.href = '/dashboard.html';
+            }
+        });
+    </script>
+</body>
+</html>

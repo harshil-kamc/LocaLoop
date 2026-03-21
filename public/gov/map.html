@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CivicConnect - Map</title>
+    <link rel="stylesheet" href="style.css">
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+</head>
+<body>
+    
+    <div id="map"></div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="map.js"></script>
+    <div id="sidebar" class="sidebar">
+        <button id="closeSidebar" onclick="closeSidebar()">✖ Close</button>
+        <img id="side-image" src="" alt="Issue Image" style="width:100%; margin-top:15px; border-radius:5px;">
+        <h2 id="side-title">Title</h2>
+        <span id="side-status" class="status-badge">Status</span>
+        <p><b>Reported by:</b> <span id="side-uploader">User</span></p>
+        <hr>
+        <h3>Description</h3>
+        <p id="side-desc">Description goes here.</p>
+        <hr>
+        <h3>Comments</h3>
+        <ul id="side-comments"></ul>
+    </div>
+</body>
+</html>

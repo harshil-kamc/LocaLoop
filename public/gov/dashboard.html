@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Localoop - Community</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+    <link rel="stylesheet" type="text/css" href="dashboard.css">
+</head>
+<body>
+
+<script>
+// Protect dashboard — redirect to login if not authenticated
+(function() {
+    const user = JSON.parse(localStorage.getItem('civicUser'));
+    if (!user || !user.name || !user.email) {
+        window.location.replace('index.html');
+    }
+})();
+</script>
+
+    <div id="map"></div>
+
+    <header class="top-nav">
+        <div class="brand">
+            <button class="icon-btn" onclick="toggleSideMenu()" style="background: var(--brand); color: white;"><i class="fas fa-bars"></i></button>
+            <i class="fas fa-layer-group" style="font-size: 22px;"></i> Localoop
+        </div>
+        <div class="nav-actions">
+        
+            <button class="icon-btn" onclick="toggleIssuesPanel()" title="Toggle List"><i class="fas fa-list-ul"></i></button>
+            <div class="user-chip">
+                <div style="width: 24px; height: 24px; border-radius: 50%; background: var(--brand); color: white; display: flex; align-items: center; justify-content: center; font-size: 10px;"><i class="fas fa-user"></i></div>
+                <span id="profileName">Loading...</span>
+            </div>
+            <button class="icon-btn" onclick="performLogout()" style="color: var(--danger);"><i class="fas fa-power-off"></i></button>
+        </div>
+    </header>
+
+    <div id="sideMenuOverlay" class="modal-overlay" onclick="toggleSideMenu()"></div>
+    <aside class="side-menu" id="sideMenu">
+        <div class="panel-header" style="display: flex; justify-content: space-between; align-items: center;">
+            <h2 style="margin:0;">Menu</h2>
+            <button class="icon-btn" onclick="toggleSideMenu()"><i class="fas fa-times"></i></button>
+        </div>
+        <div style="padding: 24px; text-align: center; border-bottom: 1px solid rgba(0,0,0,0.05);">
+            <div style="width: 64px; height: 64px; border-radius: 50%; background: var(--brand); color: white; display: flex; align-items: center; justify-content: center; font-size: 24px; margin: 0 auto 12px;"><i class="fas fa-user"></i></div>
+            <h3 id="menuProfileName" style="margin-bottom: 4px;">Loading...</h3>
+            <span class="status-badge status-resolved" id="menuProfileRole">Gov Official</span>
+        </div>
+
+        <div style="padding: 20px;">
+            <div class="nav-item active" onclick="window.location.href='dashboard.html'"><i class="fas fa-map"></i> Live Map</div>
+            <div class="nav-item" onclick="window.location.href='reports.html'"><i class="fas fa-list-alt"></i> Issue Reports</div>
+            <div class="nav-item" onclick="window.location.href='leaderboard.html'"><i class="fas fa-trophy"></i> Leaderboard</div>
+            <div class="nav-item" onclick="window.location.href='settings.html'"><i class="fas fa-cog"></i> Settings</div>
+        </div>
+    </aside>
+
+    <aside class="glass-panel left-panel" id="issuesPanel">
+        <div class="panel-header">
+            <h2>Active Reports</h2>
+            <div class="search-box">
+                <i class="fas fa-search"></i>
+                <input type="text" id="searchIssues" placeholder="Search by title or category..." onkeyup="filterIssues()">
+            </div>
+           
+        </div>
+        <div class="issues-list" id="issuesList"></div>
+    </aside>
+
+    <aside class="glass-panel right-panel" id="issueDetailPanel">
+    <div class="panel-header" style="display: flex; justify-content: space-between; align-items: center;">
+        <h2 style="margin: 0;">Issue Details</h2>
+        <button class="icon-btn" onclick="closeIssueDetail()"><i class="fas fa-times"></i></button>
+    </div>
+
+    <div class="detail-body">
+        <div class="detail-section" style="border-bottom: 1px solid #e2e8f0; padding-bottom: 16px; margin-bottom: 16px;">
+            <h3 id="detailTitle" style="font-size: 20px; font-weight: 700; margin-bottom: 12px;">Loading...</h3>
+            <span id="detailStatus" class="status-badge status-pending">Pending</span>
+        </div>
+
+        <div class="detail-section">
+            <div class="detail-label"></div>
+            <div id="detailGallery" class="horizontal-gallery"></div>
+        </div>
+
+        <div class="detail-section">
+            <div class="detail-label">Description</div>
+            <div id="detailDescription" class="detail-text">Loading description...</div>
+        </div>
+
+        <div style="display: flex; gap: 20px; margin-bottom: 24px;">
+            <div style="flex: 1;">
+                <div class="detail-label">Category</div>
+                <div id="detailCategory" class="detail-text" style="font-weight: 600;">General</div>
+            </div>
+            <div style="flex: 1;">
+                <div class="detail-label">Reporter</div>
+                <div id="detailReporter" class="detail-text" style="font-weight: 600;">User</div>
+            </div>
+        </div>
+        
+        <div id="dynamicVerifyBtnContainer"></div>
+        
+        <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 20px 0;">
+
+        <div id="dynamicCommentsContainer"></div>
+    </div>
+</aside>
+
+    <div class="map-controls">
+        <button class="fab" onclick="zoomIn()"><i class="fas fa-plus"></i></button>
+        <button class="fab" onclick="zoomOut()"><i class="fas fa-minus"></i></button>
+        <button class="fab" onclick="locateUser()" style="margin-top: 10px; color: var(--brand);"><i class="fas fa-location-arrow"></i></button>
+    </div>
+
+    <div id="reportModal" class="modal-overlay">
+        <div class="modal-content" style="max-height: 90vh; overflow-y: auto;">
+            <div class="modal-header" style="position: sticky; top: 0; background: white; z-index: 10; border-bottom: 1px solid #e2e8f0;">
+                <h3>Report an Issue</h3>
+                <button class="icon-btn" onclick="closeReportModal()" aria-label="Close"><i class="fas fa-times"></i></button>
+            </div>
+            
+            <form class="report-form" id="reportForm" onsubmit="submitNewIssue(event)" style="padding: 20px;">
+                <input type="hidden" id="reportLat">
+                <input type="hidden" id="reportLng">
+                <div id="formErrorMsg" class="error-message-form"></div>
+                
+                <div class="form-group">
+                    <label>What's the problem? *</label>
+                    <input type="text" id="reportTitle" class="form-input" required placeholder="e.g., Deep pothole blocking lane">
+                </div>
+                
+                <div class="form-group">
+                    <label>Category</label>
+                    <select id="reportCategory" class="form-input">
+                        <option>Road Hazard (Pothole)</option>
+                        <option>Infrastructure (Streetlight)</option>
+                        <option>Sanitation (Garbage)</option>
+                        <option>Utilities (Water Leak)</option>
+                        <option>Other</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>How Urgent is This? *</label>
+                    <div class="urgency-selector">
+    <input type="hidden" id="reportUrgency" value="low"> 
+
+    <button type="button" class="urgency-level selected" onclick="selectUrgency('low', this)">
+        <i class="fas fa-circle-check"></i><span>Low</span>
+    </button>
+    <button type="button" class="urgency-level" onclick="selectUrgency('medium', this)">
+        <i class="fas fa-exclamation-circle"></i><span>Medium</span>
+    </button>
+    <button type="button" class="urgency-level urgent" onclick="selectUrgency('high', this)">
+        <i class="fas fa-exclamation-triangle"></i><span>Urgent</span>
+    </button>
+</div>
+                    <input type="hidden" id="reportUrgency" value="low">
+                </div>
+                
+                <div class="form-group">
+                    <label>Photos (at least 1 required) *</label>
+                    <div class="photo-upload-area" id="photoUploadArea" onclick="document.getElementById('photoInput').click()">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                        <p>Click or drag photos here<br><small>At least 1 photo required – max 5</small></p>
+                    </div>
+                    <input type="file" id="photoInput" multiple accept="image/*" onchange="handlePhotoUpload(event)" style="display:none;">
+                    <div class="photo-preview" id="photoPreview"></div>
+                </div>
+                
+                <div class="form-group">
+                    <label>Additional Details</label>
+                    <textarea id="reportDesc" class="form-input" rows="4" placeholder="Describe the issue in more detail..."></textarea>
+                </div>
+                
+                <div style="position: sticky; bottom: 0; background: white; padding: 16px 0 8px; border-top: 1px solid #e2e8f0; z-index: 5;">
+                    <button type="submit" class="btn-primary" style="width: 100%;">
+                        <i class="fas fa-paper-plane"></i> Submit Report
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="dashboard.js"></script>
+</body>
+</html>

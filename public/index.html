@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Localoop - Welcome</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+
+    <style>
+        :root {
+            --brand: #4f46e5;
+            --brand-hover: #4338ca;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+        
+        body { 
+            height: 100vh; 
+            width: 100vw; 
+            overflow: hidden; 
+            display: flex;
+            background: #f8fafc;
+        }
+
+        /* LEFT SIDE - Beautiful Graphic / Branding */
+        .hero-section {
+            flex: 1.2;
+            background: linear-gradient(135deg, rgba(79, 70, 229, 0.9), rgba(67, 56, 202, 0.9)), url('https://images.unsplash.com/photo-1449824913935-59a10b8d2000?auto=format&fit=crop&q=80');
+            background-size: cover;
+            background-position: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 10%;
+            color: white;
+            position: relative;
+        }
+
+        .hero-section h1 { font-size: 48px; font-weight: 700; margin-bottom: 20px; line-height: 1.1; letter-spacing: -1px; }
+        .hero-section p { font-size: 18px; opacity: 0.9; line-height: 1.6; max-width: 400px; }
+        
+        .brand-logo { position: absolute; top: 40px; left: 40px; font-size: 24px; font-weight: 700; display: flex; align-items: center; gap: 10px; }
+
+        /* RIGHT SIDE - Auth Forms */
+        .auth-section {
+            flex: 1;
+            background: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 40px;
+            position: relative;
+        }
+
+        .auth-container {
+            width: 100%;
+            max-width: 400px;
+            position: relative;
+        }
+
+        .auth-header { margin-bottom: 40px; }
+        .auth-header h2 { font-size: 32px; font-weight: 700; color: var(--text-main); margin-bottom: 8px; letter-spacing: -0.5px; }
+        .auth-header p { color: var(--text-muted); font-size: 15px; }
+
+        /* Forms Setup */
+        .form-view { transition: var(--transition); width: 100%; }
+        #signupView { display: none; opacity: 0; transform: translateX(20px); }
+        .active-view { display: block !important; opacity: 1 !important; transform: translateX(0) !important; animation: slideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+
+        @keyframes slideIn { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
+
+        /* Inputs */
+        .form-group { margin-bottom: 20px; position: relative; }
+        .form-group label { display: block; font-size: 13px; font-weight: 600; color: var(--text-main); margin-bottom: 8px; }
+        
+        .input-wrapper { position: relative; }
+        .input-wrapper i { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 16px; }
+        
+        .form-input { 
+            width: 100%; padding: 14px 16px 14px 45px; 
+            background: #f8fafc; border: 1px solid #e2e8f0; 
+            border-radius: 12px; font-size: 15px; 
+            outline: none; transition: var(--transition); 
+        }
+        .form-input:focus { background: white; border-color: var(--brand); box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1); }
+
+        /* Button */
+        .btn-primary { 
+            width: 100%; padding: 16px; margin-top: 10px;
+            background: var(--brand); color: white; 
+            border: none; border-radius: 12px; 
+            font-size: 16px; font-weight: 600; 
+            cursor: pointer; transition: var(--transition); 
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.2); 
+        }
+        .btn-primary:hover { background: var(--brand-hover); transform: translateY(-2px); box-shadow: 0 6px 16px rgba(79, 70, 229, 0.3); }
+
+        /* Toggle Text */
+        .toggle-text { text-align: center; margin-top: 30px; font-size: 14px; color: var(--text-muted); }
+        .toggle-text span { color: var(--brand); font-weight: 600; cursor: pointer; transition: color 0.2s; }
+        .toggle-text span:hover { color: var(--brand-hover); text-decoration: underline; }
+
+        /* Responsive */
+        @media (max-width: 900px) {
+            body { flex-direction: column; }
+            .hero-section { flex: 0.4; padding: 40px 20px; }
+            .hero-section h1 { font-size: 32px; }
+            .brand-logo { top: 20px; left: 20px; }
+            .auth-section { flex: 1; border-top-left-radius: 24px; border-top-right-radius: 24px; margin-top: -20px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="hero-section">
+        <div class="brand-logo">
+            <i class="fas fa-layer-group"></i> Localoop
+        </div>
+        <h1>Empower Your <br>Community.</h1>
+        <p>Join thousands of citizens and city planners working together to build safer, smarter, and cleaner neighborhoods.</p>
+    </div>
+
+    <div class="auth-section">
+        <div class="auth-container">
+            
+            <div id="loginView" class="form-view active-view">
+                <div style="display: flex; justify-content: center; gap: 10px; padding: 20px; background: rgba(255,255,255,0.5); backdrop-filter: blur(10px); border-bottom: 1px solid rgba(0,0,0,0.05);">
+    <button onclick="window.location.href='index.html'" 
+            style="padding: 10px 24px; cursor: pointer; border-radius: 50px; border: none; font-weight: 700; background: var(--brand); color: white; box-shadow: var(--shadow-sm);">
+        <i class="fas fa-users"></i> Citizen
+    </button>
+    <button onclick="window.location.href='gov/index.html'" 
+            style="padding: 10px 24px; cursor: pointer; border-radius: 50px; border: 1px solid var(--brand); font-weight: 600; background: white; color: var(--brand); transition: 0.3s;">
+        <i class="fas fa-shield-alt"></i> Governance
+    </button>
+</div>
+                <div class="auth-header">
+                    <h2>Welcome back</h2>
+                    <p>Enter your details to access the dashboard.</p>
+                </div>
+                
+                <form onsubmit="handleLogin(event)">
+                    <div class="form-group">
+                        <label>Email Address</label>
+                        <div class="input-wrapper">
+                            <i class="fas fa-envelope"></i>
+                            <input type="email" id="loginEmail" class="form-input" placeholder="you@example.com" required>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Password</label>
+                        <div class="input-wrapper">
+                            <i class="fas fa-lock"></i>
+                            <input type="password" class="form-input" placeholder="••••••••" required>
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="btn-primary">Sign In</button>
+                    
+                    <div class="toggle-text">
+                        Don't have an account? <span onclick="toggleAuthView('signup')">Sign up</span>
+                    </div>
+                </form>
+            </div>
+
+            <div id="signupView" class="form-view">
+                <div class="auth-header">
+                    <h2>Create an account</h2>
+                    <p>Start improving your city today.</p>
+                </div>
+                
+                <form onsubmit="handleSignup(event)">
+                    <div class="form-group">
+                        <label>Full Name</label>
+                        <div class="input-wrapper">
+                            <i class="fas fa-user"></i>
+                            <input type="text" id="signupName" class="form-input" placeholder="Jane Doe" required>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Email Address</label>
+                        <div class="input-wrapper">
+                            <i class="fas fa-envelope"></i>
+                            <input type="email" id="signupEmail" class="form-input" placeholder="you@example.com" required>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Select Role (For Demo Purposes)</label>
+                        <div class="input-wrapper">
+                            <i class="fas fa-id-badge"></i>
+                            <select id="signupRole" class="form-input" style="appearance: none;">
+                                <option value="Citizen">Citizen (Report & Verify)</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Password</label>
+                        <div class="input-wrapper">
+                            <i class="fas fa-lock"></i>
+                            <input type="password" class="form-input" placeholder="••••••••" required>
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="btn-primary">Create Account</button>
+                    
+                    <div class="toggle-text">
+                        Already have an account? <span onclick="toggleAuthView('login')">Log in</span>
+                    </div>
+                </form>
+            </div>
+
+        </div>
+    </div>
+
+   <script>
+        if (localStorage.getItem('civicUser')) window.location.href = 'dashboard.html';
+
+        function toggleAuthView(view) {
+            const loginView = document.getElementById('loginView');
+            const signupView = document.getElementById('signupView');
+            if (view === 'signup') {
+                loginView.classList.remove('active-view');
+                setTimeout(() => { loginView.style.display = 'none'; signupView.style.display = 'block'; setTimeout(() => signupView.classList.add('active-view'), 10); }, 300);
+            } else {
+                signupView.classList.remove('active-view');
+                setTimeout(() => { signupView.style.display = 'none'; loginView.style.display = 'block'; setTimeout(() => loginView.classList.add('active-view'), 10); }, 300);
+            }
+        }
+
+        async function handleSignup(e) {
+            e.preventDefault();
+            const data = {
+                name: document.getElementById('signupName').value,
+                email: document.getElementById('signupEmail').value,
+                role: document.getElementById('signupRole').value,
+                password: document.querySelector('#signupView input[type="password"]').value
+            };
+
+            const res = await fetch('/api/auth/signup', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+
+            if (res.ok) {
+                const responseData = await res.json();
+                localStorage.setItem('civicUser', JSON.stringify(responseData.user));
+                window.location.href = 'dashboard.html';
+            } else {
+                const err = await res.json();
+                alert(err.error);
+            }
+        }
+
+        async function handleLogin(e) {
+            e.preventDefault();
+            const data = {
+                email: document.getElementById('loginEmail').value,
+                password: document.querySelector('#loginView input[type="password"]').value
+            };
+
+            const res = await fetch('/api/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+
+            if (res.ok) {
+                const responseData = await res.json();
+                localStorage.setItem('civicUser', JSON.stringify(responseData.user));
+                window.location.href = 'dashboard.html';
+            } else {
+                alert("Invalid Email or Password");
+            }
+        }
+    </script>
+</body>
+</html>

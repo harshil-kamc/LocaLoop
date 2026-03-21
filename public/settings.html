@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings - Localoop</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+    
+    <link rel="stylesheet" href="dashboard.css">
+
+    <style>
+        /* Specific layout for the Settings page */
+        body {
+            background-image: radial-gradient(#cbd5e1 1px, transparent 1px);
+            background-size: 20px 20px;
+            background-color: #f1f5f9;
+        }
+
+        .settings-container {
+            position: absolute;
+            top: 100px; /* Below top nav */
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            max-width: 1000px;
+            bottom: 30px;
+            background: var(--glass-bg);
+            backdrop-filter: var(--glass-blur);
+            border: var(--glass-border);
+            border-radius: var(--radius-xl);
+            box-shadow: var(--shadow-float);
+            display: flex;
+            overflow: hidden;
+            z-index: 10;
+        }
+
+        /* 2-Column Layout for Settings */
+        .settings-sidebar {
+            width: 280px;
+            background: rgba(255, 255, 255, 0.4);
+            border-right: 1px solid rgba(0,0,0,0.05);
+            padding: 24px 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .settings-tab {
+            padding: 14px 20px;
+            border-radius: var(--radius-lg);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            color: var(--text-muted);
+            font-weight: 600;
+            transition: var(--transition);
+        }
+
+        .settings-tab:hover {
+            background: rgba(0,0,0,0.04);
+            color: var(--text-main);
+        }
+
+        .settings-tab.active {
+            background: white;
+            color: var(--brand);
+            box-shadow: var(--shadow-subtle);
+        }
+
+        .settings-content {
+            flex: 1;
+            padding: 40px;
+            overflow-y: auto;
+        }
+
+        .settings-section {
+            max-width: 600px;
+            display: none; /* Handled by JS */
+            animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .settings-section.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .section-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--text-main);
+            margin-bottom: 8px;
+        }
+
+        .section-subtitle {
+            font-size: 14px;
+            color: var(--text-muted);
+            margin-bottom: 30px;
+        }
+
+        /* Profile Picture Upload UI */
+        .avatar-upload-container {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+            margin-bottom: 30px;
+        }
+
+        .avatar-preview {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: var(--brand);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+            box-shadow: var(--shadow-subtle);
+            border: 4px solid white;
+            object-fit: cover;
+        }
+
+        .btn-outline {
+            padding: 10px 20px;
+            border: 2px solid #e2e8f0;
+            background: transparent;
+            border-radius: var(--radius-pill);
+            font-weight: 600;
+            color: var(--text-main);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .btn-outline:hover {
+            border-color: var(--brand);
+            color: var(--brand);
+        }
+
+        /* Toggle Switches */
+        .toggle-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 0;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+        }
+
+        .toggle-info h4 {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--text-main);
+            margin-bottom: 4px;
+        }
+
+        .toggle-info p {
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 28px;
+        }
+
+        .switch input { 
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #cbd5e1;
+            transition: .4s;
+            border-radius: 34px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        input:checked + .slider {
+            background-color: var(--brand);
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(22px);
+        }
+    </style>
+</head>
+<body>
+
+    <script>
+    (function() {
+        const user = JSON.parse(localStorage.getItem('civicUser'));
+        if (!user || !user.name || !user.email) {
+            window.location.replace('index.html');
+        }
+    })();
+    </script>
+
+    <header class="top-nav">
+        <div class="brand">
+            <button class="icon-btn" onclick="toggleSideMenu()" style="background: var(--brand); color: white;"><i class="fas fa-bars"></i></button>
+            <i class="fas fa-layer-group" style="font-size: 22px;"></i> Localoop
+        </div>
+        <div class="nav-actions">
+            <div class="user-chip">
+                <div style="width: 24px; height: 24px; border-radius: 50%; background: var(--brand); color: white; display: flex; align-items: center; justify-content: center; font-size: 10px;"><i class="fas fa-user"></i></div>
+                <span id="profileName">Loading...</span>
+            </div>
+            <button class="icon-btn" onclick="performLogout()" style="color: var(--danger);"><i class="fas fa-power-off"></i></button>
+        </div>
+    </header>
+
+    <div id="sideMenuOverlay" class="modal-overlay" onclick="toggleSideMenu()"></div>
+    <aside class="side-menu" id="sideMenu">
+        <div class="panel-header" style="display: flex; justify-content: space-between; align-items: center;">
+            <h2 style="margin:0;">Menu</h2>
+            <button class="icon-btn" onclick="toggleSideMenu()"><i class="fas fa-times"></i></button>
+        </div>
+        <div style="padding: 24px; text-align: center; border-bottom: 1px solid rgba(0,0,0,0.05);">
+            <div style="width: 64px; height: 64px; border-radius: 50%; background: var(--brand); color: white; display: flex; align-items: center; justify-content: center; font-size: 24px; margin: 0 auto 12px;"><i class="fas fa-user"></i></div>
+            <h3 id="menuProfileName" style="margin-bottom: 4px;">Loading...</h3>
+            <span class="status-badge status-resolved" id="menuProfileRole">Resident</span>
+        </div>
+        <div style="padding: 20px;">
+            <div class="nav-item" onclick="window.location.href='dashboard.html'"><i class="fas fa-map"></i> Live Map</div>
+            <div class="nav-item" onclick="window.location.href='reports.html'"><i class="fas fa-list-alt"></i> Issues Reported</div>
+            <div class="nav-item" onclick="window.location.href='leaderboard.html'"><i class="fas fa-trophy"></i> Leaderboard</div>
+            <div class="nav-item" onclick="window.location.href='settings.html'"><i class="fas fa-cog"></i> Settings</div>
+            <div class="nav-item active"><i class="fas fa-cog"></i> Settings</div>
+        </div>
+    </aside>
+
+    <main class="settings-container">
+        <div class="settings-sidebar">
+            <div class="settings-tab active" onclick="switchSettingsTab('account', this)">
+                <i class="fas fa-user-edit"></i> Account Details
+            </div>
+            <div class="settings-tab" onclick="switchSettingsTab('notifications', this)">
+                <i class="fas fa-bell"></i> Notifications
+            </div>
+            <div class="settings-tab" onclick="switchSettingsTab('privacy', this)">
+                <i class="fas fa-shield-alt"></i> Privacy & Security
+            </div>
+        </div>
+
+        <div class="settings-content">
+            
+            <div id="tab-account" class="settings-section active">
+                <h2 class="section-title">Account Details</h2>
+                <p class="section-subtitle">Update your personal information and locality landmark.</p>
+                
+                <div class="avatar-upload-container">
+                    <div class="avatar-preview" id="settingsAvatarPreview"><i class="fas fa-user"></i></div>
+                    <div>
+                        <input type="file" id="profilePicInput" accept="image/*" style="display: none;">
+                        <button class="btn-outline" onclick="document.getElementById('profilePicInput').click()"><i class="fas fa-camera"></i> Change Picture</button>
+                        <p style="font-size: 12px; color: var(--text-muted); margin-top: 8px;">JPG, GIF or PNG. Max size of 2MB.</p>
+                    </div>
+                </div>
+
+                <form id="accountForm" onsubmit="saveAccountDetails(event)">
+                    <div class="form-group">
+                        <label style="font-size: 13px; font-weight: 600; color: var(--text-muted); margin-bottom: 5px; display: block;">Full Name</label>
+                        <input type="text" id="editName" class="form-input" required>
+                    </div>
+                    
+                    <div style="display: flex; gap: 20px;">
+                        <div class="form-group" style="flex: 1;">
+                            <label style="font-size: 13px; font-weight: 600; color: var(--text-muted); margin-bottom: 5px; display: block;">Phone Number</label>
+                            <input type="tel" id="editPhone" class="form-input" required>
+                        </div>
+                        <div class="form-group" style="flex: 1;">
+                            <label style="font-size: 13px; font-weight: 600; color: var(--text-muted); margin-bottom: 5px; display: block;">Email (Read Only)</label>
+                            <input type="email" id="editEmail" class="form-input" disabled style="background: #e2e8f0; cursor: not-allowed;">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label style="font-size: 13px; font-weight: 600; color: var(--text-muted); margin-bottom: 5px; display: block;">Local Landmark (Used for precise mapping)</label>
+                        <input type="text" id="editLandmark" class="form-input" placeholder="e.g., Near City Central Hospital" required>
+                    </div>
+
+                    <button type="submit" class="btn-primary" style="margin-top: 20px; width: auto; padding: 14px 30px;">
+                        <i class="fas fa-save"></i> Save Changes
+                    </button>
+                </form>
+            </div>
+
+            <div id="tab-notifications" class="settings-section">
+                <h2 class="section-title">Notifications</h2>
+                <p class="section-subtitle">Choose how you want to be alerted about issue updates in your locality.</p>
+                
+                <div class="toggle-row">
+                    <div class="toggle-info">
+                        <h4>Issue Resolutions</h4>
+                        <p>Get notified when the governance body uploads a resolution photo.</p>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                
+                <div class="toggle-row">
+                    <div class="toggle-info">
+                        <h4>Local Comments</h4>
+                        <p>Receive alerts when neighbors comment on your reported issues.</p>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+
+                <div class="toggle-row">
+                    <div class="toggle-info">
+                        <h4>Karma & Badges</h4>
+                        <p>Alert me when I receive points or the "Citizen of the Month" badge.</p>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+            </div>
+
+            <div id="tab-privacy" class="settings-section">
+                <h2 class="section-title">Privacy & Security</h2>
+                <p class="section-subtitle">Manage your account security and data visibility.</p>
+                
+                <div class="toggle-row">
+                    <div class="toggle-info">
+                        <h4>Public Profile</h4>
+                        <p>Allow other residents to see your name and Karma points on the map.</p>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+
+                <button class="btn-outline" style="margin-top: 30px; border-color: var(--danger); color: var(--danger);">
+                    <i class="fas fa-key"></i> Change Password
+                </button>
+            </div>
+
+        </div>
+    </main>
+
+    <script>
+        // 1. Initialize User Data
+        document.addEventListener('DOMContentLoaded', () => {
+            const user = JSON.parse(localStorage.getItem('civicUser'));
+            if(user) {
+                // Populate Top Nav & Side Menu
+                document.getElementById('profileName').textContent = user.name;
+                document.getElementById('menuProfileName').textContent = user.name;
+                
+                // Populate Settings Form
+                document.getElementById('editName').value = user.name || '';
+                document.getElementById('editEmail').value = user.email || '';
+                document.getElementById('editPhone').value = user.phone || '';
+                document.getElementById('editLandmark').value = user.landmark || '';
+            }
+        });
+
+        // 2. Tab Switching Logic
+        function switchSettingsTab(tabId, element) {
+            // Remove active class from all tabs & sections
+            document.querySelectorAll('.settings-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.settings-section').forEach(s => s.classList.remove('active'));
+            
+            // Add active class to clicked tab and corresponding section
+            element.classList.add('active');
+            document.getElementById('tab-' + tabId).classList.add('active');
+        }
+
+        // 3. Save Account Details
+        function saveAccountDetails(e) {
+            e.preventDefault();
+            
+            // Get existing user data
+            let user = JSON.parse(localStorage.getItem('civicUser'));
+            
+            // Update fields
+            user.name = document.getElementById('editName').value;
+            user.phone = document.getElementById('editPhone').value;
+            user.landmark = document.getElementById('editLandmark').value;
+            
+            // Save back to DB/LocalStorage
+            localStorage.setItem('civicUser', JSON.stringify(user));
+            
+            // Update UI instantly
+            document.getElementById('profileName').textContent = user.name;
+            document.getElementById('menuProfileName').textContent = user.name;
+            
+            alert('Account details updated successfully!');
+        }
+
+        // Standard Menu Logic
+        function toggleSideMenu() {
+            const menu = document.getElementById('sideMenu');
+            const overlay = document.getElementById('sideMenuOverlay');
+            menu.classList.toggle('show');
+            overlay.classList.toggle('show');
+        }
+
+        function performLogout() {
+            localStorage.removeItem('civicUser');
+            window.location.href = 'index.html';
+        }
+    </script>
+</body>
+</html>
