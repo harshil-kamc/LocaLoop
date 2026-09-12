@@ -9,9 +9,14 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+    <script src="https://unpkg.com/@maplibre/maplibre-gl-leaflet@0.0.22/leaflet-maplibre-gl.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
     <link rel="stylesheet" type="text/css" href="dashboard.css">
+    <link rel="stylesheet" href="/assets/localoop-loader.css" />
+    <script src="/assets/localoop-brand.js"></script>
 </head>
 <body>
 
@@ -30,7 +35,7 @@
     <header class="top-nav">
         <div class="brand">
             <button class="icon-btn" onclick="toggleSideMenu()" style="background: var(--brand); color: white;"><i class="fas fa-bars"></i></button>
-            <i class="fas fa-layer-group" style="font-size: 22px;"></i> Localoop
+            <a href="dashboard.html" style="text-decoration: none; color: inherit; font-size: 19px; font-weight: 800; letter-spacing: -0.5px; margin-left: 6px;">Localoop</a>
         </div>
         <div class="nav-actions">
             <div class="karma-display" style="margin-right: 15px; font-weight: 700; color: #f59e0b; display: flex; align-items: center; gap: 5px;">
@@ -41,7 +46,7 @@
                 <div style="width: 24px; height: 24px; border-radius: 50%; background: var(--brand); color: white; display: flex; align-items: center; justify-content: center; font-size: 10px;"><i class="fas fa-user"></i></div>
                 <span id="profileName">Loading...</span>
             </div>
-            <button class="icon-btn" onclick="performLogout()" style="color: var(--danger);"><i class="fas fa-power-off"></i></button>
+            <button class="icon-btn" id="signOutBtn" onclick="performLogout()" title="Sign Out" aria-label="Sign Out" style="color: var(--danger);"><i class="fas fa-power-off"></i></button>
         </div>
     </header>
 
@@ -62,6 +67,7 @@
             <div class="nav-item" onclick="window.location.href='reports.html'"><i class="fas fa-list-alt"></i> My Reports</div>
             <div class="nav-item" onclick="window.location.href='leaderboard.html'"><i class="fas fa-trophy"></i> Leaderboard</div>
             <div class="nav-item" onclick="window.location.href='settings.html'"><i class="fas fa-cog"></i> Settings</div>
+            <div class="nav-item" id="sideMenuSignOut" onclick="performLogout()" style="color: var(--danger); margin-top: 16px; border-top: 1px solid rgba(0,0,0,0.06); padding-top: 14px; cursor: pointer;"><i class="fas fa-sign-out-alt"></i> Sign Out</div>
         </div>
     </aside>
 
@@ -94,7 +100,10 @@
         </div>
 
         <div class="detail-section">
-            <div class="detail-label"></div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <div class="detail-label" style="margin-bottom: 0;">Evidence Photo</div>
+                <span id="detailPhotoBadge" style="font-size: 11px; font-weight: 600; color: var(--brand); background: #eef2ff; padding: 2px 8px; border-radius: 10px;">1 Photo</span>
+            </div>
             <div id="detailGallery" class="horizontal-gallery"></div>
         </div>
 
@@ -122,10 +131,19 @@
     </div>
 </aside>
 
+    <!-- Floating Guidance Banner for Map Pin Reporting -->
+    <div id="reportModeBanner" class="report-mode-banner">
+        <span><i class="fas fa-map-marker-alt" style="color: #818cf8; margin-right: 6px;"></i> Click anywhere on the map to place the issue pin</span>
+        <button class="cancel-btn" onclick="cancelReportMode()"><i class="fas fa-times"></i> Cancel</button>
+    </div>
+
     <div class="map-controls">
-        <button class="fab" onclick="zoomIn()"><i class="fas fa-plus"></i></button>
-        <button class="fab" onclick="zoomOut()"><i class="fas fa-minus"></i></button>
-        <button class="fab" onclick="locateUser()" style="margin-top: 10px; color: var(--brand);"><i class="fas fa-location-arrow"></i></button>
+        <button id="reportActionBtn" class="report-fab-btn" onclick="toggleReportMode()" title="Report an Issue">
+            <i class="fas fa-plus"></i> <span class="btn-text">Report Issue</span>
+        </button>
+        <button class="fab" onclick="zoomIn()" title="Zoom In"><i class="fas fa-plus"></i></button>
+        <button class="fab" onclick="zoomOut()" title="Zoom Out"><i class="fas fa-minus"></i></button>
+        <button class="fab" onclick="locateUser()" title="My Location" style="margin-top: 4px; color: var(--brand);"><i class="fas fa-location-arrow"></i></button>
     </div>
 
     <div id="reportModal" class="modal-overlay">

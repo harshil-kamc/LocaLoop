@@ -13,11 +13,14 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
     const data = await response.json();
 
     if (data.success) {
-        // If login is successful, send them to the map page!
-        window.location.href = '/map.html';
+        if (data.user) localStorage.setItem('civicUser', JSON.stringify(data.user));
+        if (data.token) localStorage.setItem('civicToken', data.token);
+        window.location.href = data.redirectUrl || '/dashboard.html';
     } else {
         const errorMsg = document.getElementById('errorMessage');
-        errorMsg.textContent = data.message;
-        errorMsg.style.display = 'block';
+        if (errorMsg) {
+            errorMsg.textContent = data.message || data.error || 'Login failed';
+            errorMsg.style.display = 'block';
+        }
     }
-});s
+});

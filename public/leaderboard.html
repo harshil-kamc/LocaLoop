@@ -6,6 +6,8 @@
     <title>Localoop - Leaderboard</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
     <link rel="stylesheet" href="dashboard.css">
+    <link rel="stylesheet" href="/assets/localoop-loader.css" />
+    <script src="/assets/localoop-brand.js"></script>
     <style>
         /* Keep your existing leaderboard styles */
         .leaderboard-container {
@@ -67,15 +69,14 @@
             <button class="icon-btn" onclick="toggleSideMenu()" style="background: var(--brand); color: white;">
                 <i class="fas fa-bars"></i>
             </button>
-            <i class="fas fa-layer-group" style="font-size: 22px; margin-left: 10px;"></i> 
-            <span style="margin-left: 8px; font-weight: 700;">Localoop</span>
+            <a href="dashboard.html" style="text-decoration: none; color: inherit; font-size: 19px; font-weight: 800; letter-spacing: -0.5px; margin-left: 10px;">Localoop</a>
         </div>
         <div class="nav-actions">
             <div class="user-chip">
                 <div style="width: 24px; height: 24px; border-radius: 50%; background: var(--brand); color: white; display: flex; align-items: center; justify-content: center; font-size: 10px;"><i class="fas fa-user"></i></div>
                 <span id="profileName">Loading...</span>
             </div>
-            <button class="icon-btn" onclick="performLogout()" style="color: var(--danger);"><i class="fas fa-power-off"></i></button>
+            <button class="icon-btn" id="signOutBtn" onclick="performLogout()" title="Sign Out" aria-label="Sign Out" style="color: var(--danger);"><i class="fas fa-power-off"></i></button>
         </div>
     </header>
 
@@ -95,6 +96,7 @@
             <div class="nav-item" onclick="window.location.href='reports.html'"><i class="fas fa-list-alt"></i> Issues Reported</div>
             <div class="nav-item active"><i class="fas fa-trophy"></i> Leaderboard</div>
             <div class="nav-item" onclick="window.location.href='settings.html'"><i class="fas fa-cog"></i> Settings</div>
+            <div class="nav-item" id="sideMenuSignOut" onclick="performLogout()" style="color: var(--danger); margin-top: 16px; border-top: 1px solid rgba(0,0,0,0.06); padding-top: 14px; cursor: pointer;"><i class="fas fa-sign-out-alt"></i> Sign Out</div>
         </div>
     </aside>
 
@@ -134,59 +136,123 @@
         }
 
         function performLogout() {
-            localStorage.removeItem('civicUser');
-            window.location.href = 'index.html';
+            try {
+                localStorage.removeItem('civicUser');
+                localStorage.clear();
+                sessionStorage.clear();
+            } catch (e) {
+                console.warn("Storage clear error during sign out:", e);
+            }
+            fetch('/api/auth/logout', { method: 'POST' }).catch(() => {});
+            window.location.replace('index.html');
         }
 
-        // LEADERBOARD DATA
-        const leaders = [
+        function isDemoAccount(email) {
+            if (!email) return false;
+            const lower = String(email).trim().toLowerCase();
+            return lower === 'citizen@localoop.org' || lower === 'official@city.gov' || lower.endsWith('@demo.localoop.org');
+        }
+
+        // Demo fallback data when demo user is active
+        const demoLeaders = [
             { name: "Arjun Reddy", points: 1450, email: "arjun@example.com", role: "Guardian" },
             { name: "Priya Sharma", points: 1200, email: "priya@example.com", role: "Active Citizen" },
             { name: "Suresh Kumar", points: 980, email: "suresh@example.com", role: "Contributor" },
-            { name: "Ananya Singh", points: 850, email: "ananya@example.com", role: "Contributor" },
-            { name: "Rahul Varma", points: 720, email: "rahul@example.com", role: "Resident" },
+            { name: "Jane Citizen", points: 120, email: "citizen@localoop.org", role: "Citizen" },
+            { name: "Inspector Davis", points: 450, email: "official@city.gov", role: "Authority" }
         ];
 
-        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', async () => {
             const currentUser = JSON.parse(localStorage.getItem('civicUser'));
             if(currentUser) {
                 // Update header and menu names
                 document.getElementById('profileName').textContent = currentUser.name;
                 document.getElementById('menuProfileName').textContent = currentUser.name;
                 document.getElementById('menuProfileRole').textContent = currentUser.role || 'Resident';
-
-                if(!leaders.find(l => l.email === currentUser.email)) {
-                    leaders.push({ name: currentUser.name, points: 450, email: currentUser.email, role: currentUser.role || "Resident" });
-                }
             }
 
-            leaders.sort((a, b) => b.points - a.points);
-            renderLeaderboard(leaders, currentUser);
+            const isDemo = currentUser && isDemoAccount(currentUser.email);
+            let leaders = [];
+
+            try {
+                const userEmail = currentUser && currentUser.email ? encodeURIComponent(currentUser.email) : '';
+                const res = await fetch(`/api/users/leaderboard?userEmail=${userEmail}`, {
+                    headers: { 'x-user-email': currentUser ? currentUser.email : '' }
+                });
+                if (res.ok) {
+                    leaders = await res.json();
+                }
+            } catch (err) {
+                console.warn("Could not fetch server leaderboard", err);
+            }
+
+            if (isDemo && (!leaders || leaders.length === 0)) {
+                leaders = demoLeaders;
+            }
+
+            if (currentUser && !leaders.find(l => l.email === currentUser.email)) {
+                leaders.push({
+                    name: currentUser.name,
+                    points: currentUser.karmaPoints || 0,
+                    email: currentUser.email,
+                    role: currentUser.role || "Resident"
+                });
+            }
+
+            leaders.sort((a, b) => (b.points || 0) - (a.points || 0));
+            renderLeaderboard(leaders, currentUser, isDemo);
         });
 
-       function renderLeaderboard(data, me) {
+        function renderLeaderboard(data, me, isDemo) {
             const list = document.getElementById('leaderboardList');
             const podium = document.getElementById('podiumContainer');
 
-            podium.innerHTML = `
-                <div class="podium-item rank-2">
-                    <div class="user-avatar" style="margin: 0 auto 10px; width: 50px; height: 50px;">${data[1].name[0]}</div>
-                    <div style="font-weight:700;">${data[1].name}</div>
-                    <div class="points">${data[1].points} pts</div>
-                    <div class="badge-pill">2nd Place</div>
-                </div>
-                <div class="podium-item rank-1">
-                    <i class="fas fa-crown crown"></i>
-                    <div class="user-avatar" style="margin: 0 auto 10px; width: 60px; height: 60px; background:var(--brand); color:white;">${data[0].name[0]}</div>
-                    <div style="font-weight:700;">${data[0].name}</div>
-                    <div class="points">${data[0].points} pts</div>
-                    <div class="badge-pill" style="background:rgba(79,70,229,0.1); color:var(--brand);">City Hero</div>
-                </div>
-                <div class="podium-item rank-3">
-                    <div class="user-avatar" style="margin: 0 auto 10px; width: 50px; height: 50px;">${data[2].name[0]}</div>
-                    <div style="font-weight:700;">${data[2].name}</div>
-                    <div class="points">${data[2].points} pts</div>
-                    <div class="badge-pill">3rd Place</div>
+            if (!data || data.length === 0) {
+                podium.innerHTML = '';
+                list.innerHTML = `
+                    <div style="padding: 40px; text-align: center; color: var(--text-muted);">
+                        <div style="width: 48px; height: 48px; border-radius: 50%; background: #e0e7ff; color: #4f46e5; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px; font-size: 20px;">
+                            <i class="fas fa-medal"></i>
+                        </div>
+                        <div style="font-weight: 700; color: #1e293b; font-size: 15px; margin-bottom: 6px;">Community Leaderboard</div>
+                        <p style="font-size: 13px; color: #64748b; margin: 0;">Start reporting or verifying civic issues to earn impact points!</p>
+                    </div>
+                `;
+                return;
+            }
+
+            if (data.length >= 3) {
+                podium.innerHTML = `
+                    <div class="podium-item rank-2">
+                        <div class="user-avatar" style="margin: 0 auto 10px; width: 50px; height: 50px;">${(data[1].name || 'U')[0]}</div>
+                        <div style="font-weight:700;">${data[1].name}</div>
+                        <div class="points">${data[1].points || 0} pts</div>
+                        <div class="badge-pill">2nd Place</div>
+                    </div>
+                    <div class="podium-item rank-1">
+                        <i class="fas fa-crown crown"></i>
+                        <div class="user-avatar" style="margin: 0 auto 10px; width: 60px; height: 60px; background:var(--brand); color:white;">${(data[0].name || 'U')[0]}</div>
+                        <div style="font-weight:700;">${data[0].name}</div>
+                        <div class="points">${data[0].points || 0} pts</div>
+                        <div class="badge-pill" style="background:rgba(79,70,229,0.1); color:var(--brand);">City Hero</div>
+                    </div>
+                    <div class="podium-item rank-3">
+                        <div class="user-avatar" style="margin: 0 auto 10px; width: 50px; height: 50px;">${(data[2].name || 'U')[0]}</div>
+                        <div style="font-weight:700;">${data[2].name}</div>
+                        <div class="points">${data[2].points || 0} pts</div>
+                        <div class="badge-pill">3rd Place</div>
+                    </div>
+                `;
+            } else {
+                podium.innerHTML = '';
+            }
+
+            list.innerHTML = `
+                <div class="leader-row" style="background: #f8fafc; font-weight: 600; font-size: 12px; color: var(--text-muted);">
+                    <span>RANK</span>
+                    <span>CITIZEN</span>
+                    <span>IMPACT POINTS</span>
+                    <span>STATUS</span>
                 </div>
             `;
 
@@ -197,14 +263,14 @@
                 row.innerHTML = `
                     <span class="rank-num">#${index + 1}</span>
                     <div class="user-info">
-                        <div class="user-avatar">${user.name[0]}</div>
+                        <div class="user-avatar">${(user.name || 'U')[0]}</div>
                         <div>
                             <div style="font-weight:600;">${user.name} ${isMe ? '(You)' : ''}</div>
-                            <div style="font-size:11px; color:var(--text-muted);">${user.role}</div>
+                            <div style="font-size:11px; color:var(--text-muted);">${user.role || 'Resident'}</div>
                         </div>
                     </div>
-                    <span class="points">${user.points.toLocaleString()}</span>
-                    <div><span class="badge-pill">${user.points > 1000 ? 'Elite' : 'Pro'}</span></div>
+                    <span class="points">${(user.points || 0).toLocaleString()}</span>
+                    <div><span class="badge-pill">${(user.points || 0) > 1000 ? 'Elite' : ((user.points || 0) > 200 ? 'Active' : 'New Member')}</span></div>
                 `;
                 list.appendChild(row);
             });

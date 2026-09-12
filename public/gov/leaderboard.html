@@ -6,6 +6,8 @@
     <title>Localoop - Leaderboard</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
     <link rel="stylesheet" href="dashboard.css">
+    <link rel="stylesheet" href="/assets/localoop-loader.css" />
+    <script src="/assets/localoop-brand.js"></script>
     <style>
         /* Keep your existing leaderboard styles */
         .leaderboard-container {
@@ -67,15 +69,16 @@
             <button class="icon-btn" onclick="toggleSideMenu()" style="background: var(--brand); color: white;">
                 <i class="fas fa-bars"></i>
             </button>
-            <i class="fas fa-layer-group" style="font-size: 22px; margin-left: 10px;"></i> 
-            <span style="margin-left: 8px; font-weight: 700;">Localoop</span>
+            <a href="dashboard.html" style="text-decoration: none; color: inherit; font-size: 19px; font-weight: 800; letter-spacing: -0.5px; display: inline-flex; align-items: center; gap: 8px; margin-left: 10px;">
+                Localoop <span class="gov-tag" style="background: #e2e8f0; color: #1e293b; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; border: 1px solid #cbd5e1;">Gov</span>
+            </a>
         </div>
         <div class="nav-actions">
             <div class="user-chip">
                 <div style="width: 24px; height: 24px; border-radius: 50%; background: var(--brand); color: white; display: flex; align-items: center; justify-content: center; font-size: 10px;"><i class="fas fa-user"></i></div>
                 <span id="profileName">Loading...</span>
             </div>
-            <button class="icon-btn" onclick="performLogout()" style="color: var(--danger);"><i class="fas fa-power-off"></i></button>
+            <button class="icon-btn" id="signOutBtn" onclick="performLogout()" title="Sign Out" aria-label="Sign Out" style="color: var(--danger);"><i class="fas fa-power-off"></i></button>
         </div>
     </header>
 
@@ -88,13 +91,14 @@
         <div style="padding: 24px; text-align: center; border-bottom: 1px solid rgba(0,0,0,0.05);">
             <div style="width: 64px; height: 64px; border-radius: 50%; background: var(--brand); color: white; display: flex; align-items: center; justify-content: center; font-size: 24px; margin: 0 auto 12px;"><i class="fas fa-user"></i></div>
             <h3 id="menuProfileName" style="margin-bottom: 4px;">Loading...</h3>
-            <span class="status-badge status-resolved" id="menuProfileRole">Resident</span>
+            <span class="status-badge status-resolved" id="menuProfileRole">Gov Official</span>
         </div>
         <div style="padding: 20px;">
             <div class="nav-item" onclick="window.location.href='dashboard.html'"><i class="fas fa-map"></i> Live Map</div>
             <div class="nav-item" onclick="window.location.href='reports.html'"><i class="fas fa-list-alt"></i> Issues Reported</div>
             <div class="nav-item active"><i class="fas fa-trophy"></i> Leaderboard</div>
             <div class="nav-item" onclick="window.location.href='settings.html'"><i class="fas fa-cog"></i> Settings</div>
+            <div class="nav-item" id="sideMenuSignOut" onclick="performLogout()" style="color: var(--danger); margin-top: 16px; border-top: 1px solid rgba(0,0,0,0.06); padding-top: 14px; cursor: pointer;"><i class="fas fa-sign-out-alt"></i> Sign Out</div>
         </div>
     </aside>
 
@@ -134,8 +138,15 @@
         }
 
         function performLogout() {
-            localStorage.removeItem('civicUser');
-            window.location.href = 'index.html';
+            try {
+                localStorage.removeItem('civicUser');
+                localStorage.clear();
+                sessionStorage.clear();
+            } catch (e) {
+                console.warn("Storage clear error during sign out:", e);
+            }
+            fetch('/api/auth/logout', { method: 'POST' }).catch(() => {});
+            window.location.replace('index.html');
         }
 
         // LEADERBOARD DATA

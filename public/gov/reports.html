@@ -9,8 +9,9 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
-    
     <link rel="stylesheet" href="dashboard.css">
+    <link rel="stylesheet" href="/assets/localoop-loader.css" />
+    <script src="/assets/localoop-brand.js"></script>
 
     <style>
         /* --- GLOBAL STYLES --- */
@@ -196,14 +197,16 @@
     <header class="top-nav">
         <div class="brand">
             <button class="icon-btn" onclick="toggleSideMenu()" style="background: var(--brand); color: white;"><i class="fas fa-bars"></i></button>
-            <i class="fas fa-layer-group" style="font-size: 22px;"></i> Localoop
+            <a href="dashboard.html" style="text-decoration: none; color: inherit; font-size: 19px; font-weight: 800; letter-spacing: -0.5px; display: inline-flex; align-items: center; gap: 8px; margin-left: 6px;">
+                Localoop <span class="gov-tag" style="background: #e2e8f0; color: #1e293b; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; border: 1px solid #cbd5e1;">Gov</span>
+            </a>
         </div>
         <div class="nav-actions">
             <div class="user-chip">
                 <div style="width: 24px; height: 24px; border-radius: 50%; background: var(--brand); color: white; display: flex; align-items: center; justify-content: center; font-size: 10px;"><i class="fas fa-user"></i></div>
                 <span id="profileName">Loading...</span>
             </div>
-            <button class="icon-btn" onclick="performLogout()" style="color: var(--danger);"><i class="fas fa-power-off"></i></button>
+            <button class="icon-btn" id="signOutBtn" onclick="performLogout()" title="Sign Out" aria-label="Sign Out" style="color: var(--danger);"><i class="fas fa-power-off"></i></button>
         </div>
     </header>
 
@@ -223,6 +226,7 @@
             <div class="nav-item active" onclick="window.location.href='reports.html'"><i class="fas fa-list-alt"></i> Issue Reports</div>
             <div class="nav-item" onclick="window.location.href='leaderboard.html'"><i class="fas fa-trophy"></i> Leaderboard</div>
             <div class="nav-item" onclick="window.location.href='settings.html'"><i class="fas fa-cog"></i> Settings</div>
+            <div class="nav-item" id="sideMenuSignOut" onclick="performLogout()" style="color: var(--danger); margin-top: 16px; border-top: 1px solid rgba(0,0,0,0.06); padding-top: 14px; cursor: pointer;"><i class="fas fa-sign-out-alt"></i> Sign Out</div>
         </div>
     </aside>
 
@@ -284,12 +288,31 @@
             currentIssueId: null
         };
 
+        function isDemoAccount(email) {
+            if (!email) return false;
+            const lower = String(email).trim().toLowerCase();
+            return lower === 'official@city.gov' || lower === 'citizen@localoop.org' || lower.endsWith('@demo.localoop.org');
+        }
+
         async function fetchIssues() {
             try {
-                // In a real app, this points to your backend
-                const response = await fetch('/api/issues');
+                const user = state.currentUser || {};
+                const userEmail = user.email ? encodeURIComponent(user.email) : '';
+                const response = await fetch(`/api/issues?userEmail=${userEmail}`, {
+                    headers: { 'x-user-email': user.email || '' }
+                });
                 if (response.ok) {
-                    state.issues = await response.json();
+                    let allIssues = await response.json();
+                    const isDemo = isDemoAccount(user.email);
+                    if (!isDemo) {
+                        allIssues = allIssues.filter(r => 
+                            !r.isDemo && 
+                            !String(r.id).startsWith('iss_') && 
+                            r.reporterEmail !== 'citizen@localoop.org' && 
+                            r.reporterEmail !== 'official@city.gov'
+                        );
+                    }
+                    state.issues = allIssues;
                     renderReports(state.activeFilter);
                 }
             } catch (err) {
@@ -316,20 +339,29 @@
                 const statusClass = isResolved ? 'status-resolved' : 'status-pending';
                 const statusText = report.status.charAt(0).toUpperCase() + report.status.slice(1);
                 const displayDate = report.createdAt ? new Date(report.createdAt).toLocaleDateString() : 'Recent';
+                const photos = Array.isArray(report.images) && report.images.length > 0 ? report.images : (Array.isArray(report.photos) && report.photos.length > 0 ? report.photos : []);
+                const thumb = photos[0] || '';
 
                 const cardHTML = `
-                    <div class="issue-card">
-                        <div class="card-header">
-                            <div class="card-title">${report.title}</div>
-                            <span class="status-badge ${statusClass}">${statusText}</span>
+                    <div class="issue-card" style="display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 14px;">
+                        <div style="flex: 1; min-width: 0;">
+                            <div class="card-header">
+                                <div class="card-title">${report.title}</div>
+                                <span class="status-badge ${statusClass}">${statusText}</span>
+                            </div>
+                            <div class="card-meta" style="margin-bottom: 12px;">
+                                <span><i class="fas fa-calendar-alt"></i> ${displayDate}</span>
+                                <span><i class="fas fa-tag"></i> ${report.category || 'Civic'}</span>
+                            </div>
+                            <button class="btn-primary" onclick="openDetails('${report._id || report.id}')" style="padding: 8px 14px; font-size: 13px; min-height: 34px; background: white; color: var(--brand); border: 1px solid var(--brand); display: inline-flex; width: auto;">
+                                ${isResolved ? 'View Details' : 'Resolve Issue'}
+                            </button>
                         </div>
-                        <div class="card-meta" style="margin-bottom: 12px;">
-                            <span><i class="fas fa-calendar-alt"></i> ${displayDate}</span>
-                            <span><i class="fas fa-user"></i> ${report.reporterEmail}</span>
-                        </div>
-                        <button class="btn-primary" onclick="openDetails('${report._id}')" style="padding: 10px; font-size: 13px; min-height: 36px; background: white; color: var(--brand); border: 1px solid var(--brand);">
-                            ${isResolved ? 'View Details' : 'Resolve Issue'}
-                        </button>
+                        ${thumb ? `
+                            <div class="issue-card-image-tab" style="width: 76px; height: 76px; border-radius: 10px; overflow: hidden; flex-shrink: 0; border: 1px solid #e2e8f0; background: #f8fafc;">
+                                <img src="${thumb}" alt="${report.title}" style="width: 100%; height: 100%; object-fit: cover;" referrerpolicy="no-referrer" onerror="this.parentElement.style.display='none'">
+                            </div>
+                        ` : ''}
                     </div>
                 `;
                 grid.insertAdjacentHTML('beforeend', cardHTML);
@@ -420,8 +452,15 @@
         }
 
         function performLogout() {
-            localStorage.removeItem('civicUser');
-            window.location.href = 'index.html';
+            try {
+                localStorage.removeItem('civicUser');
+                localStorage.clear();
+                sessionStorage.clear();
+            } catch (e) {
+                console.warn("Storage clear error during sign out:", e);
+            }
+            fetch('/api/auth/logout', { method: 'POST' }).catch(() => {});
+            window.location.replace('index.html');
         }
 
         document.addEventListener('DOMContentLoaded', () => {

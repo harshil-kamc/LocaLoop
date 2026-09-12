@@ -10,6 +10,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+    <link rel="stylesheet" href="/assets/localoop-loader.css" />
+    <script src="/assets/localoop-brand.js"></script>
 
     <style>
         :root {
@@ -123,7 +125,7 @@
 
     <div class="hero-section">
         <div class="brand-logo">
-            <i class="fas fa-shield-alt"></i> Localoop Gov
+            Localoop <span class="gov-tag" style="background: rgba(255,255,255,0.2); color: #ffffff; border: 1px solid rgba(255,255,255,0.4); padding: 3px 10px; border-radius: 20px; font-weight: 700; font-size: 12px; margin-left: 8px;">Gov</span>
         </div>
         <h1>Manage Your <br>City.</h1>
         <p>Official portal for city authorities and planners to manage community reports and urban development.</p>
@@ -131,6 +133,7 @@
 
     <div class="auth-section">
         <div class="auth-container">
+            <div id="authNotice" style="display:none; margin: 15px 25px 0 25px; padding: 12px 16px; border-radius: 10px; font-size: 14px; font-weight: 500; text-align: center;"></div>
             
             <div id="loginView" class="form-view active-view">
                 <div style="display: flex; justify-content: center; gap: 10px; padding: 20px; background: rgba(255,255,255,0.5); border-bottom: 1px solid rgba(0,0,0,0.05);">
@@ -147,6 +150,11 @@
                     <h2>Official Login</h2>
                     <p>Enter your credentials to access the governance portal.</p>
                 </div>
+
+                <div style="display: flex; align-items: center; justify-content: space-between; background: #eff6ff; border: 1px solid #bfdbfe; padding: 10px 14px; border-radius: 8px; margin-bottom: 18px; font-size: 13px; color: #1e40af;">
+                    <span><i class="fas fa-id-badge" style="margin-right: 5px;"></i><strong>Demo:</strong> official@city.gov &bull; password123</span>
+                    <button type="button" onclick="fillDemoGov()" style="background: #1d4ed8; color: white; border: none; padding: 4px 10px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 12px; transition: 0.2s;">Fill Demo</button>
+                </div>
                 
                 <form onsubmit="handleLogin(event)">
                     <div class="form-group">
@@ -159,9 +167,10 @@
                     
                     <div class="form-group">
                         <label>Password</label>
-                        <div class="input-wrapper">
+                        <div class="input-wrapper" style="position: relative;">
                             <i class="fas fa-lock"></i>
-                            <input type="password" class="form-input" placeholder="••••••••" required>
+                            <input type="password" id="loginPassword" class="form-input" placeholder="••••••••" required style="padding-right: 40px;">
+                            <i class="fas fa-eye" id="toggleLoginPwd" onclick="togglePasswordVisibility('loginPassword', 'toggleLoginPwd')" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #64748b;"></i>
                         </div>
                     </div>
                     
@@ -226,7 +235,46 @@
    <script>
         if (localStorage.getItem('civicUser')) window.location.href = 'dashboard.html';
 
+        function showNotice(msg, isError = true) {
+            const notice = document.getElementById('authNotice');
+            if (notice) {
+                notice.textContent = msg;
+                notice.style.display = 'block';
+                notice.style.background = isError ? '#fef2f2' : '#f0fdf4';
+                notice.style.color = isError ? '#b91c1c' : '#15803d';
+                notice.style.border = isError ? '1px solid #fecaca' : '1px solid #bbf7d0';
+            }
+        }
+
+        function clearNotice() {
+            const notice = document.getElementById('authNotice');
+            if (notice) notice.style.display = 'none';
+        }
+
+        function fillDemoGov() {
+            document.getElementById('loginEmail').value = 'official@city.gov';
+            const pwdInput = document.getElementById('loginPassword');
+            if (pwdInput) pwdInput.value = 'password123';
+            showNotice('Official demo credentials filled! Click "Sign In" below.', false);
+        }
+
+        function togglePasswordVisibility(inputId, iconId) {
+            const input = document.getElementById(inputId);
+            const icon = document.getElementById(iconId);
+            if (!input || !icon) return;
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                input.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        }
+
         function toggleAuthView(view) {
+            clearNotice();
             const loginView = document.getElementById('loginView');
             const signupView = document.getElementById('signupView');
             if (view === 'signup') {
@@ -238,55 +286,91 @@
             }
         }
 
-// Inside gov/index.html -> handleSignup function
-async function handleSignup(e) {
-    e.preventDefault();
-    const data = {
-        name: document.getElementById('signupName').value,
-        email: document.getElementById('signupEmail').value,
-        locality: document.getElementById('signupLocality').value,
-        password: document.querySelector('#signupView input[type="password"]').value,
-        role: 'Authority',
-        userType: 'gov' // <--- CRITICAL: Flag to tell backend to use Gov collection
-    };
+        async function handleSignup(e) {
+            e.preventDefault();
+            clearNotice();
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            const originalText = submitBtn.textContent;
+            submitBtn.textContent = 'Creating Account...';
+            submitBtn.disabled = true;
 
-    const res = await fetch('/api/auth/signup', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
-    });
-    // ... rest of your code
+            const data = {
+                name: document.getElementById('signupName').value.trim(),
+                email: document.getElementById('signupEmail').value.trim(),
+                locality: document.getElementById('signupLocality').value.trim(),
+                password: document.querySelector('#signupView input[type="password"]').value,
+                role: 'Authority',
+                userType: 'gov'
+            };
 
+            try {
+                const res = await fetch('/api/auth/signup', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
 
-            if (res.ok) {
-                const responseData = await res.json();
-                localStorage.setItem('civicUser', JSON.stringify(responseData.user));
-                window.location.href = 'dashboard.html';
-            } else {
-                const err = await res.json();
-                alert(err.error);
+                const responseData = await res.json().catch(() => ({}));
+
+                if (res.ok) {
+                    showNotice('Official account created! Redirecting...', false);
+                    localStorage.setItem('civicUser', JSON.stringify(responseData.user));
+                    if (responseData.token) localStorage.setItem('civicToken', responseData.token);
+                    setTimeout(() => {
+                        window.location.href = responseData.redirectUrl || 'dashboard.html';
+                    }, 600);
+                } else {
+                    showNotice(responseData.error || responseData.message || 'Registration failed. Try again.', true);
+                    submitBtn.textContent = originalText;
+                    submitBtn.disabled = false;
+                }
+            } catch (err) {
+                showNotice('Network error. Please try again.', true);
+                submitBtn.textContent = originalText;
+                submitBtn.disabled = false;
             }
         }
 
         async function handleLogin(e) {
             e.preventDefault();
+            clearNotice();
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            const originalText = submitBtn.textContent;
+            submitBtn.textContent = 'Signing in...';
+            submitBtn.disabled = true;
+
+            const pwdElem = document.getElementById('loginPassword') || document.querySelector('#loginView input[type="password"]');
             const data = {
-                email: document.getElementById('loginEmail').value,
-                password: document.querySelector('#loginView input[type="password"]').value
+                email: document.getElementById('loginEmail').value.trim(),
+                password: pwdElem ? pwdElem.value.trim() : ''
             };
 
-            const res = await fetch('/api/auth/login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data)
-            });
+            try {
+                const res = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
 
-            if (res.ok) {
-                const responseData = await res.json();
-                localStorage.setItem('civicUser', JSON.stringify(responseData.user));
-                window.location.href = 'dashboard.html';
-            } else {
-                alert("Invalid Email or Password");
+                const responseData = await res.json().catch(() => ({}));
+
+                if (res.ok) {
+                    showNotice('Official login verified! Redirecting...', false);
+                    if (window.showLocaloopLoader) window.showLocaloopLoader('Entering Portal...');
+                    localStorage.setItem('civicUser', JSON.stringify(responseData.user));
+                    if (responseData.token) localStorage.setItem('civicToken', responseData.token);
+                    setTimeout(() => {
+                        window.location.href = responseData.redirectUrl || 'dashboard.html';
+                    }, 800);
+                } else {
+                    showNotice(responseData.error || responseData.message || 'Invalid Official Email or Password', true);
+                    submitBtn.textContent = originalText;
+                    submitBtn.disabled = false;
+                }
+            } catch (err) {
+                showNotice('Network error. Please check your connection.', true);
+                submitBtn.textContent = originalText;
+                submitBtn.disabled = false;
             }
         }
     </script>

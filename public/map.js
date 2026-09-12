@@ -1,11 +1,22 @@
 // 1. Initialize map
 const map = L.map('map').setView([17.3850, 78.4867], 13);
 
-// 🔥 UPGRADED HIGH-RES TILE LAYER 🔥
-L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
-    maxZoom: 19, // Allows you to zoom in much closer before it gets blurry
-    attribution: 'Tiles &copy; Esri &mdash; Source: Esri, DeLorme, NAVTEQ, USGS, Intermap, iPC, NRCAN, Esri Japan, METI, Esri China (Hong Kong), Esri (Thailand), TomTom, 2012'
-}).addTo(map);
+// Clean base layer: Zero POI icons (no temples, no restaurants, no landmarks) and zero name tags
+try {
+    if (typeof L.maplibreGL === 'function') {
+        L.maplibreGL({
+            style: '/clean-map-style.json'
+        }).addTo(map);
+    } else {
+        throw new Error("L.maplibreGL not loaded");
+    }
+} catch (e) {
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
+        maxZoom: 19,
+        maxNativeZoom: 16,
+        attribution: '&copy; Esri'
+    }).addTo(map);
+}
 
 // We create a "Layer Group" for our issue pins. 
 const issueMarkers = L.layerGroup().addTo(map);
@@ -52,10 +63,21 @@ async function fetchIssuesInView() {
     const maxLng = bounds.getNorthEast().lng;
 
     try {
-        // Send those edges to your Node backend
-        const response = await fetch(`/api/issues?minLat=${minLat}&maxLat=${maxLat}&minLng=${minLng}&maxLng=${maxLng}`);
-        const issues = await response.json();
+        const user = JSON.parse(localStorage.getItem('civicUser') || '{}');
+        const userEmail = user.email ? encodeURIComponent(user.email) : '';
+        const isDemo = user.email && (user.email === 'citizen@localoop.org' || user.email === 'official@city.gov' || user.email.endsWith('@demo.localoop.org'));
+
+        // Send edges and user email to backend
+        const response = await fetch(`/api/issues?minLat=${minLat}&maxLat=${maxLat}&minLng=${minLng}&maxLng=${maxLng}&userEmail=${userEmail}`, {
+            headers: { 'x-user-email': user.email || '' }
+        });
+        let issues = await response.json();
         
+        // Hide demo issues for real / new users
+        if (!isDemo) {
+            issues = issues.filter(i => !i.isDemo && i.id !== 'iss_1' && i.id !== 'iss_2' && i.reporterEmail !== 'citizen@localoop.org' && i.reporterEmail !== 'official@city.gov');
+        }
+
         currentIssuesData = issues; // Save the data globally!
         
         // Wipe the old pins off the map so we don't get duplicates
@@ -63,14 +85,18 @@ async function fetchIssuesInView() {
 
         // Draw the new pins
         issues.forEach(issue => {
-            const latLng = [issue.location.coordinates[1], issue.location.coordinates[0]];
+            const latLng = (issue.lat !== undefined && issue.lng !== undefined)
+                ? [issue.lat, issue.lng]
+                : (issue.location?.coordinates ? [issue.location.coordinates[1], issue.location.coordinates[0]] : null);
+            
+            if (!latLng) return;
             
             // Create the Popup HTML (The Box that opens on click)
             const popupContent = `
                 <div style="text-align: center;">
                     <h3 style="margin: 0 0 5px 0;">${issue.title}</h3>
-                    <p style="margin: 0 0 10px 0; color: gray;">By: ${issue.uploader}</p>
-                    <button onclick="openSidebar('${issue.id}')" 
+                    <p style="margin: 0 0 10px 0; color: gray;">By: ${issue.reportedBy || issue.uploader || 'Citizen'}</p>
+                    <button onclick="openSidebar('${issue.id || issue._id}')" 
                             style="padding: 5px 10px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer;">
                         View Full Details
                     </button>

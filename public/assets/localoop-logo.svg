@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 56" width="100%" height="100%" fill="currentColor">
+  <!-- Localoop Brand Typography + Interlocking Double-L Logo -->
+  <style>
+    .brand-text {
+      font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-weight: 800;
+      font-size: 34px;
+      letter-spacing: -0.5px;
+    }
+  </style>
+  <!-- "Loca" Prefix -->
+  <text x="4" y="41" class="brand-text">Loca</text>
+  
+  <!-- Signature Interlocking Double-L Symbol -->
+  <g class="brand-mark">
+    <!-- Lower-Left L -->
+    <path d="M 94 20 H 102 V 33 H 117 V 41 H 94 Z" />
+    <!-- Upper-Right L -->
+    <path d="M 105 7 H 113 V 22 H 128 V 30 H 105 Z" />
+  </g>
+  
+  <!-- "oop" Suffix -->
+  <text x="133" y="41" class="brand-text">oop</text>
+</svg>

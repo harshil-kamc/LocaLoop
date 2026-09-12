@@ -9,8 +9,9 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
-    
     <link rel="stylesheet" href="dashboard.css">
+    <link rel="stylesheet" href="/assets/localoop-loader.css" />
+    <script src="/assets/localoop-brand.js"></script>
 
     <style>
         /* Specific layout for the Settings page */
@@ -224,14 +225,16 @@
     <header class="top-nav">
         <div class="brand">
             <button class="icon-btn" onclick="toggleSideMenu()" style="background: var(--brand); color: white;"><i class="fas fa-bars"></i></button>
-            <i class="fas fa-layer-group" style="font-size: 22px;"></i> Localoop
+            <a href="dashboard.html" style="text-decoration: none; color: inherit; font-size: 19px; font-weight: 800; letter-spacing: -0.5px; display: inline-flex; align-items: center; gap: 8px; margin-left: 6px;">
+                Localoop <span class="gov-tag" style="background: #e2e8f0; color: #1e293b; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; border: 1px solid #cbd5e1;">Gov</span>
+            </a>
         </div>
         <div class="nav-actions">
             <div class="user-chip">
                 <div style="width: 24px; height: 24px; border-radius: 50%; background: var(--brand); color: white; display: flex; align-items: center; justify-content: center; font-size: 10px;"><i class="fas fa-user"></i></div>
                 <span id="profileName">Loading...</span>
             </div>
-            <button class="icon-btn" onclick="performLogout()" style="color: var(--danger);"><i class="fas fa-power-off"></i></button>
+            <button class="icon-btn" id="signOutBtn" onclick="performLogout()" title="Sign Out" aria-label="Sign Out" style="color: var(--danger);"><i class="fas fa-power-off"></i></button>
         </div>
     </header>
 
@@ -250,8 +253,8 @@
             <div class="nav-item" onclick="window.location.href='dashboard.html'"><i class="fas fa-map"></i> Live Map</div>
             <div class="nav-item" onclick="window.location.href='reports.html'"><i class="fas fa-list-alt"></i> Issues Reported</div>
             <div class="nav-item" onclick="window.location.href='leaderboard.html'"><i class="fas fa-trophy"></i> Leaderboard</div>
-            <div class="nav-item" onclick="window.location.href='settings.html'"><i class="fas fa-cog"></i> Settings</div>
-            <div class="nav-item active"><i class="fas fa-cog"></i> Settings</div>
+            <div class="nav-item active" onclick="window.location.href='settings.html'"><i class="fas fa-cog"></i> Settings</div>
+            <div class="nav-item" id="sideMenuSignOut" onclick="performLogout()" style="color: var(--danger); margin-top: 16px; border-top: 1px solid rgba(0,0,0,0.06); padding-top: 14px; cursor: pointer;"><i class="fas fa-sign-out-alt"></i> Sign Out</div>
         </div>
     </aside>
 
@@ -431,8 +434,15 @@
         }
 
         function performLogout() {
-            localStorage.removeItem('civicUser');
-            window.location.href = 'index.html';
+            try {
+                localStorage.removeItem('civicUser');
+                localStorage.clear();
+                sessionStorage.clear();
+            } catch (e) {
+                console.warn("Storage clear error during sign out:", e);
+            }
+            fetch('/api/auth/logout', { method: 'POST' }).catch(() => {});
+            window.location.replace('index.html');
         }
     </script>
 </body>
