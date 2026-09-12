@@ -1,0 +1,10 @@
+{
+  "name": "Localoop",
+  "description": "Civic reporting and community governance platform connecting citizens and local authorities.",
+  "requestFramePermissions": [
+    "geolocation"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
