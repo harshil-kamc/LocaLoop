@@ -1,6 +1,12 @@
 Localoop - Community Issue Reporting System
 Localoop is a full-stack web application that allows citizens to report local issues (like broken street lights or potholes) and enables government officials to resolve them.
+
+
+
 live site:https://localoop.onrender.com/
+
+
+
 Prerequisites
 Before running this project, ensure you have the following installed:
 
