@@ -49,14 +49,22 @@ function isDemoEmail(email) {
 function registerMemoryUser(userData) {
     const email = (userData.email || '').trim().toLowerCase();
     const isDemo = isDemoEmail(email) || !!userData.isPreSeeded || !!userData.isDemo;
+    const role = userData.role || 'Citizen';
+    const isGov = role.toLowerCase().includes('gov') || role.toLowerCase().includes('authority') || role.toLowerCase().includes('official');
+    // STRICT RULE: Only citizens get karma points
+    const karmaPoints = isGov ? 0 : (Number(userData.karmaPoints) || 0);
+    const weeklyKarmaPoints = isGov ? 0 : (Number(userData.weeklyKarmaPoints !== undefined ? userData.weeklyKarmaPoints : userData.karmaPoints) || 0);
+
     const user = {
         id: userData.id || 'usr_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7),
         name: (userData.name || 'User').trim(),
         email: email,
         password: (userData.password || '').trim(),
-        role: userData.role || 'Citizen',
+        role: role,
         locality: (userData.locality || '').trim(),
-        karmaPoints: Number(userData.karmaPoints) || 0,
+        karmaPoints: karmaPoints,
+        weeklyKarmaPoints: weeklyKarmaPoints,
+        karmaHistory: userData.karmaHistory || [],
         profilePic: userData.profilePic || '',
         issuesReported: userData.issuesReported || [],
         createdAt: userData.createdAt || new Date(),
@@ -75,6 +83,7 @@ registerMemoryUser({
     role: 'Citizen',
     locality: 'Central District',
     karmaPoints: 120,
+    weeklyKarmaPoints: 70,
     isPreSeeded: true,
     isDemo: true
 });
@@ -85,9 +94,71 @@ registerMemoryUser({
     password: 'password123',
     role: 'Authority',
     locality: 'Ward 4, West Zone',
-    karmaPoints: 450,
+    karmaPoints: 0, // Authorities/Officials do not earn karma points
+    weeklyKarmaPoints: 0,
     isPreSeeded: true,
     isDemo: true
+});
+
+// Pre-seed top active citizens for community weekly leaderboard
+registerMemoryUser({
+    name: 'Arjun Reddy',
+    email: 'arjun@localoop.org',
+    password: 'password123',
+    role: 'Citizen',
+    locality: 'Banjara Hills',
+    karmaPoints: 1450,
+    weeklyKarmaPoints: 340,
+    issuesReported: ['iss_seeded_1', 'iss_seeded_2'],
+    isPreSeeded: true
+});
+
+registerMemoryUser({
+    name: 'Priya Sharma',
+    email: 'priya@localoop.org',
+    password: 'password123',
+    role: 'Citizen',
+    locality: 'Jubilee Hills',
+    karmaPoints: 1200,
+    weeklyKarmaPoints: 290,
+    issuesReported: ['iss_seeded_3'],
+    isPreSeeded: true
+});
+
+registerMemoryUser({
+    name: 'Suresh Kumar',
+    email: 'suresh@localoop.org',
+    password: 'password123',
+    role: 'Citizen',
+    locality: 'Madhapur',
+    karmaPoints: 980,
+    weeklyKarmaPoints: 210,
+    issuesReported: ['iss_seeded_4'],
+    isPreSeeded: true
+});
+
+registerMemoryUser({
+    name: 'Ananya Singh',
+    email: 'ananya@localoop.org',
+    password: 'password123',
+    role: 'Citizen',
+    locality: 'Gachibowli',
+    karmaPoints: 850,
+    weeklyKarmaPoints: 160,
+    issuesReported: ['iss_seeded_5'],
+    isPreSeeded: true
+});
+
+registerMemoryUser({
+    name: 'Rahul Varma',
+    email: 'rahul@localoop.org',
+    password: 'password123',
+    role: 'Citizen',
+    locality: 'Kondapur',
+    karmaPoints: 720,
+    weeklyKarmaPoints: 110,
+    issuesReported: ['iss_seeded_6'],
+    isPreSeeded: true
 });
 
 // Seed realistic civic issues with appropriate images and relative offsets for demo users
@@ -466,34 +537,60 @@ app.post('/api/logout', (req, res) => {
 });
 
 // ==========================================
-// 4. LEADERBOARD API
+// 4. LEADERBOARD API (WEEKLY & ALL-TIME)
 // ==========================================
 app.get('/api/users/leaderboard', (req, res) => {
     try {
         const userEmail = (req.query.userEmail || req.headers['x-user-email'] || '').trim().toLowerCase();
-        const isDemo = isDemoEmail(userEmail);
+        const period = (req.query.period || req.query.timeframe || 'weekly').trim().toLowerCase(); // 'weekly' (default) or 'all'
 
         let usersList = Array.from(memoryUsers.values());
 
-        if (!isDemo) {
-            // Non-demo users: exclude pre-seeded demo personas
-            usersList = usersList.filter(u => !isDemoEmail(u.email) && !u.isPreSeeded && !u.isDemo);
-        }
+        // STRICT REQUIREMENT: Only citizens get karma points and participate in the leaderboard
+        usersList = usersList.filter(u => {
+            const role = (u.role || '').toLowerCase();
+            const isGov = role.includes('gov') || role.includes('official') || role.includes('authority');
+            return !isGov;
+        });
 
-        const mapped = usersList
-            .sort((a, b) => (b.karmaPoints || 0) - (a.karmaPoints || 0))
-            .slice(0, 10)
-            .map(u => ({
+        const mapped = usersList.map(u => {
+            const allTime = Number(u.karmaPoints) || 0;
+            let weekly = Number(u.weeklyKarmaPoints !== undefined ? u.weeklyKarmaPoints : Math.min(allTime, 120));
+            if (weekly > allTime) weekly = allTime;
+
+            return {
+                id: u.id,
                 name: u.name,
                 email: u.email,
-                role: u.role,
-                points: u.karmaPoints || 0,
+                role: 'Citizen',
+                locality: u.locality || 'Central District',
+                points: period === 'all' ? allTime : weekly,
+                weeklyPoints: weekly,
+                allTimePoints: allTime,
                 pic: u.profilePic || '',
                 reportCount: (u.issuesReported || []).length,
                 isDemo: isDemoEmail(u.email) || !!u.isPreSeeded
-            }));
+            };
+        });
 
-        res.json(mapped);
+        // Sort based on period
+        if (period === 'all') {
+            mapped.sort((a, b) => (b.allTimePoints - a.allTimePoints) || (b.weeklyPoints - a.weeklyPoints));
+        } else {
+            mapped.sort((a, b) => (b.weeklyPoints - a.weeklyPoints) || (b.allTimePoints - a.allTimePoints));
+        }
+
+        const topRanked = mapped.slice(0, 25);
+
+        if (req.query.format === 'object') {
+            return res.json({
+                period: period,
+                leaderboard: topRanked,
+                count: topRanked.length
+            });
+        }
+
+        res.json(topRanked);
     } catch (err) {
         console.error("Leaderboard error:", err);
         res.status(500).json({ error: "Failed to fetch leaderboard" });
@@ -592,10 +689,18 @@ app.post('/api/issues', async (req, res) => {
 
         memoryIssues.unshift(createdIssue);
 
-        // Award +50 Karma points to the reporter in memory
+        // Award +50 Karma points to the reporter ONLY if role is Citizen (Authorities never get karma)
         if (createdIssue.reporterEmail && memoryUsers.has(createdIssue.reporterEmail)) {
             const reporter = memoryUsers.get(createdIssue.reporterEmail);
-            reporter.karmaPoints = (reporter.karmaPoints || 0) + 50;
+            const reporterRole = (reporter.role || '').toLowerCase();
+            const isCitizen = reporterRole === 'citizen' || reporterRole === 'resident' || 
+                              (!reporterRole.includes('gov') && !reporterRole.includes('official') && !reporterRole.includes('authority'));
+            if (isCitizen) {
+                reporter.karmaPoints = (reporter.karmaPoints || 0) + 50;
+                reporter.weeklyKarmaPoints = (reporter.weeklyKarmaPoints || 0) + 50;
+                if (!reporter.karmaHistory) reporter.karmaHistory = [];
+                reporter.karmaHistory.push({ action: 'report', points: 50, issueId: createdIssue.id, timestamp: new Date() });
+            }
             if (!reporter.issuesReported) reporter.issuesReported = [];
             reporter.issuesReported.push(createdIssue.id);
         }
@@ -641,10 +746,18 @@ app.post('/api/issues/:id/vote', async (req, res) => {
             }
         }
 
-        // Reward the voter with +10 Karma points
+        // Reward the voter with +10 Karma points ONLY if role is Citizen (Authorities never get karma)
         if (normalizedEmail && memoryUsers.has(normalizedEmail)) {
             const voter = memoryUsers.get(normalizedEmail);
-            voter.karmaPoints = (voter.karmaPoints || 0) + 10;
+            const voterRole = (voter.role || '').toLowerCase();
+            const isCitizen = voterRole === 'citizen' || voterRole === 'resident' || 
+                              (!voterRole.includes('gov') && !voterRole.includes('official') && !voterRole.includes('authority'));
+            if (isCitizen) {
+                voter.karmaPoints = (voter.karmaPoints || 0) + 10;
+                voter.weeklyKarmaPoints = (voter.weeklyKarmaPoints || 0) + 10;
+                if (!voter.karmaHistory) voter.karmaHistory = [];
+                voter.karmaHistory.push({ action: 'vote', points: 10, issueId: id, timestamp: new Date() });
+            }
         }
 
         res.json(issue);

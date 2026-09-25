@@ -764,11 +764,10 @@ function updateHeaderUI() {
     const nameEl = document.getElementById('headerUserName');
     if (nameEl) nameEl.textContent = user.name;
 
-    // Update Karma Display
+    // Officials do not earn karma points (only citizens earn karma)
     const karmaEl = document.getElementById('headerKarmaCount');
     if (karmaEl) {
-        // Use || 0 to handle new users with no points yet
-        karmaEl.innerHTML = `<i class="fas fa-medal" style="color: #fbbf24;"></i> ${user.karmaPoints || 0} Karma`;
+        karmaEl.style.display = 'none';
     }
 }
 function toggleSideMenu() {

@@ -500,6 +500,19 @@ async function voteIssue(id, voteType) {
             const updated = await res.json();
             const index = state.issues.findIndex(i => i.id === id);
             if (index !== -1) state.issues[index] = updated;
+
+            // Only citizens earn karma points (+10 per verification vote)
+            const role = (state.currentUser.role || '').toLowerCase();
+            const isCitizen = role === 'citizen' || role === 'resident' || 
+                              (!role.includes('gov') && !role.includes('official') && !role.includes('authority'));
+            if (isCitizen) {
+                state.currentUser.karmaPoints = (state.currentUser.karmaPoints || 0) + 10;
+                state.currentUser.weeklyKarmaPoints = (state.currentUser.weeklyKarmaPoints || 0) + 10;
+                localStorage.setItem('civicUser', JSON.stringify(state.currentUser));
+                const karmaEl = document.getElementById('userKarma');
+                if (karmaEl) karmaEl.textContent = state.currentUser.karmaPoints;
+            }
+
             selectIssue(id); // Refresh Detail View
         }
     } catch (err) { console.error("Vote failed", err); }
@@ -713,6 +726,19 @@ async function submitNewIssue(e) {
         if (res.ok) {
             // Optional: Show a success toast or alert
             console.log("Issue saved to MongoDB");
+
+            // Only citizens earn karma points (+50 per reported issue)
+            const role = (user.role || '').toLowerCase();
+            const isCitizen = role === 'citizen' || role === 'resident' || 
+                              (!role.includes('gov') && !role.includes('official') && !role.includes('authority'));
+            if (isCitizen) {
+                user.karmaPoints = (user.karmaPoints || 0) + 50;
+                user.weeklyKarmaPoints = (user.weeklyKarmaPoints || 0) + 50;
+                localStorage.setItem('civicUser', JSON.stringify(user));
+                state.currentUser = user;
+                const karmaEl = document.getElementById('userKarma');
+                if (karmaEl) karmaEl.textContent = user.karmaPoints;
+            }
             
             closeReportModal();
             
